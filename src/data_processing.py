@@ -1,3 +1,5 @@
+# src/data_preprocessing.py
+
 import re
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -88,23 +90,3 @@ def preprocess_data(
     )
 
     return train_df, val_df, train_encodings, val_encodings
-
-
-if __name__ == "__main__":
-    # Example for manual testing
-    sample_data = {
-        "text": [
-            "I LOVED this movie!!! So much better than expected :)",
-            "Terrible... I want my time back.",
-            "An average film, nothing special.",
-            "Check this out: https://imdb.com",
-        ],
-        "label": [1, 0, 1, 1],
-    }
-
-    df = pd.DataFrame(sample_data)
-    train_df, val_df, train_enc, val_enc = preprocess_data(df)
-
-    print("✅ Sample cleaning & tokenization complete!")
-    print("Train size:", len(train_df), "Validation size:", len(val_df))
-    print("First cleaned text:", train_df['clean_text'].iloc[0])
