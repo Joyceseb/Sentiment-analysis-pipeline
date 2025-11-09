@@ -4,7 +4,8 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
-from datasets import load_dataset, load_metric
+from datasets import load_dataset
+import evaluate
 import numpy as np
 
 
@@ -25,7 +26,8 @@ def main():
     encoded_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
     # 3️⃣ Define evaluation metric
-    metric = load_metric("accuracy")
+    metric = evaluate.load("accuracy")
+
 
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
