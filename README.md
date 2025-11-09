@@ -6,6 +6,7 @@ The pipeline allows you to load, clean, and process raw text data, then fine-tun
 
 You will also be able to deploy the trained model for inference and perform online sentiment predictions on new text inputs and validate everything with unit tests. 
 
+______________________________________________________________________________________________________________
 
 You can explore the main components of the pipeline:
 Data Extraction → Load and validate raw data with robust error handling. (data_extraction.py)
@@ -21,4 +22,5 @@ Testing → Unit tests covering data loading, preprocessing, and model forward p
 # Project Structure 
 
 <img width="164" height="149" alt="image" src="https://github.com/user-attachments/assets/c2243090-0aec-4737-bf1b-81728814e8fb" />
+
 
