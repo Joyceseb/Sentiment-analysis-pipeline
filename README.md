@@ -58,6 +58,8 @@ pip install -r requirements.txt
 
 These libraries are required for data manipulation, tokenization, model training, and testing
 
+______________________________________________________________________________________________________________
+
 # Step-by-Step Project Workflow
 
 **Step 1 — Data Extraction (data_extraction.py)**
@@ -73,11 +75,15 @@ These libraries are required for data manipulation, tokenization, model training
 **Example**:
 
 """
+
 from data_extraction import load_data
 
 df = load_data("dataset.csv")
 
 """
+
+______________________________________________________________________________________________________________
+
 
 **Step 2 — Data Processing (data_processing.py)**
 
@@ -101,6 +107,9 @@ train_df, val_df, train_enc, val_enc = preprocess_data(df)
 
 """
 
+______________________________________________________________________________________________________________
+
+
 **Step 3 — Model Training (model.py)**
 
 **Goal**: Fine-tune a BERT model on the sentiment dataset.
@@ -122,6 +131,8 @@ train_df, val_df, train_enc, val_enc = preprocess_data(df)
 python model.py
 
 """ 
+
+______________________________________________________________________________________________________________
 
 **Step 4 — Inference (Prediction)**
 
@@ -146,9 +157,15 @@ print("Sentiment:", "Positive" if prediction == 1 else "Negative")
 
 """
 
+______________________________________________________________________________________________________________
+
+
 **Step 5 — Unit Testing (tests/)**
 
 **Goal**: Validate the functionality and robustness of each module.
+
+______________________________________________________________________________________________________________
+
 
 **Test File	Description**
 
@@ -157,3 +174,14 @@ print("Sentiment:", "Positive" if prediction == 1 else "Negative")
 - test_data_processing.py	: Verifies text cleaning, tokenization, and the correct split between training and validation sets.
 - 
 - test_model.py	: Checks the proper loading of the model and tokenizer, ensures that the forward pass executes correctly, and verifies the shape of the output logits.
+
+______________________________________________________________________________________________________________
+
+
+# Refernces : 
+
+Sentiment Analysis using BERT  : (https://www.kaggle.com/code/prakharrathi25/sentiment-analysis-using-bert)
+Huggin Face transformer : (https://huggingface.co/docs/transformers/index)
+Github CheatSheet : (https://education.github.com/git-cheat-sheet-education.pdf)
+Github Hello World  : (step-by-step guide) (https://docs.github.com/en/get-started/start-your-journey/hello-world)
+
