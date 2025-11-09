@@ -1,76 +1,102 @@
+import torch
+from datasets import load_dataset
 from transformers import (
-    AutoTokenizer,
-    AutoModelForSequenceClassification,
+    BertTokenizer,
+    BertForSequenceClassification,
     Trainer,
     TrainingArguments,
 )
-from datasets import load_dataset
 import evaluate
-import numpy as np
+import logging
+import os
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def main():
-    # 1️⃣ Load pretrained model and tokenizer
-    model_name = "bert-base-uncased"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    try:
+        # Force CPU to avoid MPS memory issues
+        device = "cpu"  # Force CPU usage
+        logger.info("Using CPU to avoid MPS memory issues")
+        
+        # Load the dataset
+        logger.info("Loading IMDB dataset...")
+        dataset = load_dataset("imdb")
 
-    # 2️⃣ Load and preprocess dataset (example: IMDb)
-    dataset = load_dataset("imdb")
+        # Load model and tokenizer
+        model_name = "bert-base-uncased"
+        logger.info(f"Loading model and tokenizer: {model_name}")
+        tokenizer = BertTokenizer.from_pretrained(model_name)
+        model = BertForSequenceClassification.from_pretrained(model_name, num_labels=2)
+        
+        # Move model to CPU
+        model.to(device)
 
-    def preprocess_function(examples):
-        return tokenizer(examples["text"], truncation=True, padding="max_length", max_length=128)
+        # Tokenization with shorter sequences to save memory
+        def tokenize_function(examples):
+            return tokenizer(
+                examples["text"], 
+                padding="max_length", 
+                truncation=True, 
+                max_length=256  # Reduced from 512 to save memory
+            )
 
-    encoded_dataset = dataset.map(preprocess_function, batched=True)
-    encoded_dataset = encoded_dataset.rename_column("label", "labels")
-    encoded_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
+        logger.info("Tokenizing datasets...")
+        tokenized_datasets = dataset.map(tokenize_function, batched=True)
 
-    # 3️⃣ Define evaluation metric
-    metric = evaluate.load("accuracy")
+        # Take even smaller subsets for quick training
+        small_train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(500))  # Reduced from 1000
+        small_eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(200))   # Reduced from 1000
 
+        # Training arguments with reduced memory footprint
+        training_args = TrainingArguments(
+            output_dir="./results",
+            eval_strategy="epoch",
+            save_strategy="epoch",
+            load_best_model_at_end=True,
+            metric_for_best_model="accuracy",
+            per_device_train_batch_size=4,  # Reduced from 8
+            per_device_eval_batch_size=4,   # Reduced from 8
+            num_train_epochs=2,
+            logging_dir="./logs",
+            logging_steps=20,
+            report_to="none",
+            save_total_limit=1,
+            dataloader_num_workers=0,  # Disable multiprocessing to save memory
+            no_cuda=True,  # Explicitly disable CUDA/MPS
+        )
 
-    def compute_metrics(eval_pred):
-        logits, labels = eval_pred
-        predictions = np.argmax(logits, axis=-1)
-        return metric.compute(predictions=predictions, references=labels)
+        # Define accuracy metric
+        accuracy_metric = evaluate.load("accuracy")
 
-    # 4️⃣ Define training arguments
-    training_args = TrainingArguments(
-        output_dir="./results",
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        learning_rate=2e-5,
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
-        num_train_epochs=2,
-        weight_decay=0.01,
-        logging_dir="./logs",
-        load_best_model_at_end=True,
-    )
+        def compute_metrics(eval_pred):
+            logits, labels = eval_pred
+            predictions = torch.argmax(torch.tensor(logits), dim=-1)
+            return accuracy_metric.compute(predictions=predictions, references=labels)
 
-    # 5️⃣ Initialize Trainer
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=encoded_dataset["train"].shuffle(seed=42).select(range(2000)),  # smaller subset for demo
-        eval_dataset=encoded_dataset["test"].shuffle(seed=42).select(range(500)),
-        tokenizer=tokenizer,
-        compute_metrics=compute_metrics,
-    )
+        # Trainer setup
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=small_train_dataset,
+            eval_dataset=small_eval_dataset,
+            compute_metrics=compute_metrics,
+        )
 
-    # 6️⃣ Train (fine-tune) the model
-    trainer.train()
+        # Train
+        logger.info("Starting training...")
+        trainer.train()
 
-    # 7️⃣ Evaluate on validation/test set
-    results = trainer.evaluate()
-    print("Evaluation results:", results)
+        # Save model
+        logger.info("Saving model...")
+        trainer.save_model("./final_model")
+        
+        logger.info("Training completed successfully!")
 
-    # 8️⃣ Save the fine-tuned model
-    save_path = "./models/bert_sentiment"
-    model.save_pretrained(save_path)
-    tokenizer.save_pretrained(save_path)
-    print(f"Model saved to {save_path}")
-
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        raise
 
 if __name__ == "__main__":
-    main()
+j
