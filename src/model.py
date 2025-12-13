@@ -14,60 +14,70 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def main():
     try:
-        # Force CPU to avoid MPS memory issues
-        device = "cpu"  # Force CPU usage
-        logger.info("Using CPU to avoid MPS memory issues")
-        
-        # Load the dataset
+        # Force CPU
+        device = "cpu"
+        logger.info("Using CPU to avoid MPS/CUDA issues.")
+
+        # Load dataset
         logger.info("Loading IMDB dataset...")
         dataset = load_dataset("imdb")
 
-        # Load model and tokenizer
+        # Load pre-trained model + tokenizer
         model_name = "bert-base-uncased"
         logger.info(f"Loading model and tokenizer: {model_name}")
         tokenizer = BertTokenizer.from_pretrained(model_name)
         model = BertForSequenceClassification.from_pretrained(model_name, num_labels=2)
-        
+
         # Move model to CPU
         model.to(device)
 
-        # Tokenization with shorter sequences to save memory
+        # Tokenization function
         def tokenize_function(examples):
             return tokenizer(
-                examples["text"], 
-                padding="max_length", 
-                truncation=True, 
-                max_length=256  # Reduced from 512 to save memory
+                examples["text"],
+                padding="max_length",
+                truncation=True,
+                max_length=256
             )
 
-        logger.info("Tokenizing datasets...")
+        logger.info("Tokenizing dataset...")
         tokenized_datasets = dataset.map(tokenize_function, batched=True)
 
-        # Take even smaller subsets for quick training
-        small_train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(500))  # Reduced from 1000
-        small_eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(200))   # Reduced from 1000
+        # Smaller subsets for fast training
+        small_train_dataset = (
+            tokenized_datasets["train"]
+            .shuffle(seed=42)
+            .select(range(500))
+        )
+        small_eval_dataset = (
+            tokenized_datasets["test"]
+            .shuffle(seed=42)
+            .select(range(200))
+        )
 
-        # Training arguments with reduced memory footprint
+        # Training parameters
         training_args = TrainingArguments(
             output_dir="./results",
-            eval_strategy="epoch",
+            eval_strategy="epoch",        # FIXED
             save_strategy="epoch",
             load_best_model_at_end=True,
             metric_for_best_model="accuracy",
-            per_device_train_batch_size=4,  # Reduced from 8
-            per_device_eval_batch_size=4,   # Reduced from 8
+            per_device_train_batch_size=4,
+            per_device_eval_batch_size=4,
             num_train_epochs=2,
             logging_dir="./logs",
             logging_steps=20,
             report_to="none",
             save_total_limit=1,
-            dataloader_num_workers=0,  # Disable multiprocessing to save memory
-            no_cuda=True,  # Explicitly disable CUDA/MPS
+            dataloader_num_workers=0,
+            no_cuda=True,
         )
 
-        # Define accuracy metric
+
+        # Metric
         accuracy_metric = evaluate.load("accuracy")
 
         def compute_metrics(eval_pred):
@@ -75,7 +85,7 @@ def main():
             predictions = torch.argmax(torch.tensor(logits), dim=-1)
             return accuracy_metric.compute(predictions=predictions, references=labels)
 
-        # Trainer setup
+        # Trainer
         trainer = Trainer(
             model=model,
             args=training_args,
@@ -84,18 +94,26 @@ def main():
             compute_metrics=compute_metrics,
         )
 
-        # Train
+        # Train model
         logger.info("Starting training...")
         trainer.train()
+        logger.info("Training finished.")
 
-        # Save model
-        logger.info("Saving model...")
-        trainer.save_model("./final_model")
-        
-        logger.info("Training completed successfully!")
+        # --- Ensure model directory exists ---
+        if not os.path.exists("./final_model"):
+            os.makedirs("./final_model")
+
+        # --- Force save model + tokenizer ---
+        logger.info("Saving model to ./final_model ...")
+        trainer.model.save_pretrained("./final_model")
+        tokenizer.save_pretrained("./final_model")
+
+        logger.info("Model saved successfully!")
 
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.error(f"An error occurred during training: {e}")
         raise
 
 
+if __name__ == "__main__":
+    main()
