@@ -2,7 +2,6 @@ import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 import logging
 import os
-
 # --- Logging setup ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
