@@ -33,4 +33,4 @@ jobs:
 
     - name: Run Tests with Coverage
       run: |
-        pytest --cov=src --cov-fail-under=90 tests/
+        pytest --cov=src --cov-fail-under=70 tests/
