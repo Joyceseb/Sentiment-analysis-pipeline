@@ -2,7 +2,7 @@ name: Model Evaluation
 
 on:
   workflow_run:
-    workflows: ["Run Tests"]   
+    workflows: ["Run Tests"]
     types:
       - completed
 
@@ -12,39 +12,63 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-   
+      # --------------------------------------------------
+      # Checkout repository
+      # --------------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # --------------------------------------------------
+      # Set up Python
+      # --------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
+      # --------------------------------------------------
+      # Install dependencies
+      # --------------------------------------------------
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install torch transformers datasets evaluate
 
+      # --------------------------------------------------
+      # Download trained model (artifact from training job)
+      # --------------------------------------------------
+      - name: Download trained model
+        uses: actions/download-artifact@v4
+        with:
+          name: final-model
+          path: final_model
+
+      # --------------------------------------------------
+      # Run evaluation
+      # --------------------------------------------------
       - name: Run evaluation
         run: |
           python -m src.evaluation
 
-
+      # --------------------------------------------------
+      # Upload evaluation results
+      # --------------------------------------------------
       - name: Upload evaluation results
         uses: actions/upload-artifact@v4
         with:
           name: evaluation-metrics
           path: eval_results/
 
-      
+      # --------------------------------------------------
+      # Fail pipeline if accuracy is below threshold
+      # --------------------------------------------------
       - name: Check evaluation threshold
         run: |
           python <<EOF
           import json
           import sys
 
-          THRESHOLD = 0.80  # seuil de performance (accuracy)
+          THRESHOLD = 0.80
 
           with open("eval_results/eval_results.json") as f:
               results = json.load(f)
