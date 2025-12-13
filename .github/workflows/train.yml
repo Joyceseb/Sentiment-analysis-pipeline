@@ -30,4 +30,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: final-model
-          path: final_model/
+          path: final_model/  # Assuming the model is saved in this directory
