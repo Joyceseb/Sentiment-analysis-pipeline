@@ -21,12 +21,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
 
       - name: Lint with flake8
         run: |
@@ -57,9 +58,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          # Added accelerate to fix training crash
-          pip install torch transformers datasets evaluate accelerate
+          # Using requirements.txt to ensure all deps (accelerate, scikit-learn, etc) are present
+          pip install -r requirements.txt
 
       - name: Train model
         run: |
@@ -89,9 +89,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          # Added accelerate here as well just in case
-          pip install torch transformers datasets evaluate accelerate
+          # Using requirements.txt to ensure all deps (accelerate, scikit-learn, etc) are present
+          pip install -r requirements.txt
 
       - name: Download trained model
         uses: actions/download-artifact@v4
@@ -128,7 +127,7 @@ jobs:
           accuracy = results.get("eval_accuracy")
 
           if accuracy is None:
-              print("Accuracy not found in evaluation results")
+              print(f"Accuracy not found in evaluation results. Available keys: {list(results.keys())}")
               sys.exit(1)
 
           print(f"Accuracy: {accuracy}")
