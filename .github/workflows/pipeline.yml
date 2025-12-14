@@ -1,0 +1,141 @@
+name: Model Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  # ------------------------------------------------------------------
+  # JOB 1: TEST
+  # ------------------------------------------------------------------
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 src tests --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings.
+          flake8 src tests --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Run Tests with Coverage
+        run: |
+          pytest --cov=src --cov-fail-under=70 tests/
+
+  # ------------------------------------------------------------------
+  # JOB 2: TRAIN (Runs only if 'test' passes)
+  # ------------------------------------------------------------------
+  train:
+    name: Train Model
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Added accelerate to fix training crash
+          pip install torch transformers datasets evaluate accelerate
+
+      - name: Train model
+        run: |
+          python -m src.model
+
+      - name: Upload trained model
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-model
+          path: final_model/
+
+  # ------------------------------------------------------------------
+  # JOB 3: EVALUATE (Runs only if 'train' passes)
+  # ------------------------------------------------------------------
+  evaluate:
+    name: Evaluate Model
+    needs: train
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Added accelerate here as well just in case
+          pip install torch transformers datasets evaluate accelerate
+
+      - name: Download trained model
+        uses: actions/download-artifact@v4
+        with:
+          name: final-model
+          path: final_model
+
+      - name: Run evaluation
+        run: |
+          python -m src.evaluation
+
+      - name: Upload evaluation results
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-metrics
+          path: eval_results/
+
+      - name: Check evaluation threshold
+        run: |
+          python <<EOF
+          import json
+          import sys
+
+          THRESHOLD = 0.80
+          
+          # Reading the JSON file created by src.evaluation
+          try:
+              with open("eval_results/eval_results.json") as f:
+                  results = json.load(f)
+          except FileNotFoundError:
+              print("Error: eval_results.json not found!")
+              sys.exit(1)
+
+          accuracy = results.get("eval_accuracy")
+
+          if accuracy is None:
+              print("Accuracy not found in evaluation results")
+              sys.exit(1)
+
+          print(f"Accuracy: {accuracy}")
+
+          if accuracy < THRESHOLD:
+              print(f"Model performance below threshold ({THRESHOLD})")
+              sys.exit(1)
+
+          print("Model performance meets the threshold")
+          EOF
