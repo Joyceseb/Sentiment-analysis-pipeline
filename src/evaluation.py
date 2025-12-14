@@ -105,6 +105,19 @@ def main():
         for key, value in results.items():
             logger.info(f"{key}: {value}")
 
+        import json
+        import os
+        
+        # Ensure output directory exists
+        if not os.path.exists("./eval_results"):
+            os.makedirs("./eval_results")
+            
+        output_file = "./eval_results/eval_results.json"
+        with open(output_file, "w") as f:
+            json.dump(results, f, indent=4)
+        
+        logger.info(f"Results saved to {output_file}")
+
     except Exception as e:
         logger.error(f"An error occurred during evaluation: {e}")
         raise

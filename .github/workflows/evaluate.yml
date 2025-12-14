@@ -2,7 +2,7 @@ name: Model Evaluation
 
 on:
   workflow_run:
-    workflows: ["Train Model", "Run Tests"]
+    workflows: ["Train Model"]
     types:
       - completed
 
@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install torch transformers datasets evaluate
+          pip install torch transformers datasets evaluate accelerate
 
       # --------------------------------------------------
       # Download trained model artifact
@@ -43,6 +43,8 @@ jobs:
         with:
           name: final-model
           path: final_model
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # --------------------------------------------------
       # Run evaluation
