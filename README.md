@@ -22,13 +22,18 @@ You can explore the main components of the pipeline:
 
 ______________________________________________________________________________________________________________
 
-# Project Structure 
+# Project Overview 
 
-<img width="164" height="149" alt="image" src="https://github.com/user-attachments/assets/c2243090-0aec-4737-bf1b-81728814e8fb" />
+This project has been done in collaboration with my colleague Déborah. Here it will demonstrates how a small team can build a complete NLP pipeline whime applying MLOPs principles such as : 
+
+- **Version control & branching** (Git / PR workflow)
+- **Automated testing** (Pytest)
+- **Continuous Integration** (Github Actions)
+- **Collaborative management** (Trello board)
 
 ______________________________________________________________________________________________________________
 
-# Project Setup
+# Project Setup Instructions 
 
 **Step 1 — Clone the Repository**
 
@@ -36,7 +41,7 @@ git clone https://github.com/your-username/sentiment-analysis-pipeline.git
 
 cd sentiment-analysis-pipeline
 
-This will copy the full project locally and prepare the workspace.
+This will copy the full project locally and prepare the required workspace.
 
 ______________________________________________________________________________________________________________
 
@@ -66,7 +71,7 @@ ________________________________________________________________________________
 
 **Goal**: Load and verify raw text data.
 
-- Load CSV files into pandas DataFrames.
+- Load and validates CSV files into pandas DataFrames.
 
 - Handle errors such as missing files, empty files, invalid formats, or permission issues.
 
@@ -136,7 +141,7 @@ ________________________________________________________________________________
 
 **Step 4 — Inference (Prediction)**
 
-**Goal**: Use the trained model to predict sentiment for new text samples.
+**Goal**: Use the trained model to predict sentiment as positive or Negative for new text samples.
 
 **Example:**
 
@@ -160,7 +165,7 @@ print("Sentiment:", "Positive" if prediction == 1 else "Negative")
 ______________________________________________________________________________________________________________
 
 
-**Step 5 — Unit Testing (tests/)**
+**Step 5 — Testing & Continuous Integration (tests/)**
 
 **Goal**: Validate the functionality and robustness of each module.
 
