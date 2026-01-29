@@ -183,7 +183,7 @@ ________________________________________________________________________________
 ______________________________________________________________________________________________________________
 
 
-# Refernces : 
+# References : 
 
 Sentiment Analysis using BERT  : (https://www.kaggle.com/code/prakharrathi25/sentiment-analysis-using-bert)
 Huggin Face transformer : (https://huggingface.co/docs/transformers/index)
